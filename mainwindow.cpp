@@ -230,7 +230,7 @@ void MainWindow::on_pushButtonAbout_clicked()
 {
     QMessageBox::about(this, tr("About Serial Tool"),
             tr("<h3>Serial Tool</h3>"
-               "<p>Version: 1.1.0</p>"
+               "<p>Version: 1.1.1</p>"
                "<p>Copyright © 2026 Veidongray@qq.com</p>"
                "<p>Built with Qt %1</p>")
                        .arg(QT_VERSION_STR));
