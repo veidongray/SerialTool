@@ -21,6 +21,7 @@ public:
 public slots:
     void on_readyReadSerialData();
     void on_timerOut();
+    void on_timerShowOut();
 private slots:
     void on_pushButtonOpenPort_clicked();
 
@@ -30,9 +31,12 @@ private slots:
 
     void on_pushButtonAbout_clicked();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serial;
-    QTimer *timer;
+    QTimer *timer, *timerShow;
+    QByteArray *rxBuffer;
 };
 #endif // MAINWINDOW_H

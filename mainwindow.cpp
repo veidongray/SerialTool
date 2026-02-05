@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    rxBuffer = new QByteArray(1024 * 1024, 0x00);   // 1MB
+
     /* Add serial ports */
     QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     for (QSerialPortInfo port : ports) {
@@ -23,11 +25,29 @@ MainWindow::MainWindow(QWidget *parent)
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::on_timerOut);
     timer->start(1000);
+
+    timerShow = new QTimer(this);
+    connect(timerShow, &QTimer::timeout, this, &MainWindow::on_timerShowOut);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_timerShowOut()
+{
+    if (!rxBuffer->isEmpty()) {
+        QString strRead;
+        if (ui->checkBoxTimeView->isChecked()) {
+            QDateTime current = QDateTime::currentDateTime();
+            ui->textEditRead->moveCursor(QTextCursor::End);
+            strRead = "Recv[" + current.toString("HH:mm:ss") + "]:";
+            ui->textEditRead->insertHtml(tr("<br><font color='blue'>%1</font><br>").arg(strRead));
+        }
+        ui->textEditRead->append(*rxBuffer);
+        rxBuffer->clear();
+    }
 }
 
 void MainWindow::on_timerOut()
@@ -167,6 +187,7 @@ void MainWindow::on_pushButtonOpenPort_clicked()
     if (serial->open(QIODevice::ReadWrite)) {
         timer->stop();
         this->setButtonsEnabled(true);
+        timerShow->start(100);
         connect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
         qDebug() << tr("Open port successfully!");
     } else {
@@ -179,23 +200,18 @@ void MainWindow::on_pushButtonOpenPort_clicked()
 void MainWindow::on_pushButtonClosePort_clicked()
 {
     timer->start(1000);
+    timerShow->stop();
     serial->close();
+    disconnect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
     delete serial;
     serial = nullptr;
-    disconnect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
     this->setButtonsEnabled(false);
     qDebug() << tr("Close port successfully!");
 }
 
 void MainWindow::on_readyReadSerialData()
 {
-    QString strRead;
-    QDateTime current = QDateTime::currentDateTime();
-
-    ui->textEditRead->moveCursor(QTextCursor::End);
-    strRead = "[" + current.toString("HH:mm:ss") + "]:";
-    ui->textEditRead->insertHtml(tr("<br><font color='blue'>%1</font><br>").arg(strRead));
-    ui->textEditRead->append(serial->readAll());
+    rxBuffer->append(serial->readAll());
 }
 
 void MainWindow::on_pushButtonSendData_clicked()
@@ -213,8 +229,13 @@ void MainWindow::on_pushButtonAbout_clicked()
 {
     QMessageBox::about(this, tr("About Serial Tool"),
             tr("<h3>Serial Tool</h3>"
-               "<p>Version: 1.0.0</p>"
+               "<p>Version: 1.1.0</p>"
                "<p>Copyright © 2026 Veidongray@qq.com</p>"
                "<p>Built with Qt %1</p>")
                        .arg(QT_VERSION_STR));
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    ui->textEditRead->clear();
 }

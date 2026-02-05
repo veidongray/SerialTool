@@ -24,6 +24,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    endif()
 #endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_definitions(QT_NO_DEBUG_OUTPUT)
+endif()
+
 find_package(Qt5 COMPONENTS Widgets SerialPort REQUIRED)
 
 if(ANDROID)
@@ -34,7 +38,7 @@ if(ANDROID)
     mainwindow.ui
   )
 else()
-  add_executable(SerialTool
+  add_executable(SerialTool WIN32
     main.cpp
     mainwindow.cpp
     mainwindow.h
