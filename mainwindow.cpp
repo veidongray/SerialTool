@@ -13,8 +13,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    rxBuffer = new QByteArray(1024 * 1024, 0x00);   // 1MB
-
     /* Add serial ports */
     QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     for (QSerialPortInfo port : ports) {
@@ -187,6 +185,7 @@ void MainWindow::on_pushButtonOpenPort_clicked()
     if (serial->open(QIODevice::ReadWrite)) {
         timer->stop();
         this->setButtonsEnabled(true);
+        rxBuffer = new QByteArray(1024 * 1024, 0x00);   // 1MB
         timerShow->start(100);
         connect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
         qDebug() << tr("Open port successfully!");
@@ -202,6 +201,8 @@ void MainWindow::on_pushButtonClosePort_clicked()
     timer->start(1000);
     timerShow->stop();
     serial->close();
+    rxBuffer->clear();
+    delete rxBuffer;
     disconnect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
     delete serial;
     serial = nullptr;
