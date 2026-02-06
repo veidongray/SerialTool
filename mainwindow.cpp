@@ -13,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    ui->comboBoxBaudRate->setCurrentText(tr("115200"));
+    ui->comboBoxDataBits->setCurrentText(tr("8"));
+
     /* Add serial ports */
     QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     for (QSerialPortInfo port : ports) {
@@ -33,6 +36,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+/**
+ * @brief MainWindow::on_timerShowOut
+ * 每100ms输出一次rxBuffer的内容
+ */
 void MainWindow::on_timerShowOut()
 {
     if (!rxBuffer->isEmpty()) {
@@ -40,14 +47,23 @@ void MainWindow::on_timerShowOut()
         if (ui->checkBoxTimeView->isChecked()) {
             QDateTime current = QDateTime::currentDateTime();
             ui->textEditRead->moveCursor(QTextCursor::End);
-            strRead = "Recv[" + current.toString("HH:mm:ss") + "]:";
-            ui->textEditRead->insertHtml(tr("<br><font color='blue'>%1</font><br>").arg(strRead));
+            strRead = "Recv[" + current.toString("HH:mm:ss") + "]:\r\n";
+            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
+        } else {
+            strRead = "Recv:\r\n";
+            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         }
         ui->textEditRead->append(*rxBuffer);
         rxBuffer->clear();
+        ui->textEditRead->moveCursor(QTextCursor::End);
     }
 }
 
+/**
+ * @brief MainWindow::on_timerOut
+ * 每1s检查并更新一次串口列表
+ * 如果当前串口被打开则不会更新
+ */
 void MainWindow::on_timerOut()
 {
     QStack<QString> stack;
@@ -68,6 +84,12 @@ void MainWindow::on_timerOut()
     }
 }
 
+/**
+ * @brief MainWindow::setButtonsEnabled
+ * @param status
+ * 配置各个按钮以及下拉框的可选状态
+ * 分为串口被打开时和串口关闭时的不同状态
+ */
 void MainWindow::setButtonsEnabled(bool status)
 {
     if (status == true) {
@@ -95,6 +117,10 @@ void MainWindow::setButtonsEnabled(bool status)
     }
 }
 
+/**
+ * @brief MainWindow::on_pushButtonOpenPort_clicked
+ * 打开串口，打开之前会对串口进行配置
+ */
 void MainWindow::on_pushButtonOpenPort_clicked()
 {
     serial = new QSerialPort(this);
@@ -186,6 +212,8 @@ void MainWindow::on_pushButtonOpenPort_clicked()
         timer->stop();
         this->setButtonsEnabled(true);
         rxBuffer = new QByteArray(1024 * 1024, 0x00);   // 1MB
+        rxBuffer->clear();
+        serial->setReadBufferSize(1024 * 1024); // 1MB
         timerShow->start(100);
         connect(serial, &QSerialPort::readyRead, this, &MainWindow::on_readyReadSerialData);
         qDebug() << tr("Open port successfully!");
@@ -196,6 +224,10 @@ void MainWindow::on_pushButtonOpenPort_clicked()
     }
 }
 
+/**
+ * @brief MainWindow::on_pushButtonClosePort_clicked
+ * 关闭串口，重新打开更新串口列表的时钟，清空rxBuffer的内容
+ */
 void MainWindow::on_pushButtonClosePort_clicked()
 {
     timer->start(1000);
@@ -215,28 +247,44 @@ void MainWindow::on_readyReadSerialData()
     rxBuffer->append(serial->readAll());
 }
 
+/**
+ * @brief MainWindow::on_pushButtonSendData_clicked
+ * 发送数据
+ */
 void MainWindow::on_pushButtonSendData_clicked()
 {
+    QString strRead;
     QString strData = ui->plainTextEditWrite->toPlainText();
     if (strData.isEmpty())
         return;
     if (serial->write(strData.toUtf8()) < 0)
         qDebug() << serial->errorString();
-    else
-        ui->textEditRead->append(strData);
+    else {
+        if (ui->checkBoxTimeView->isChecked()) {
+            QDateTime current = QDateTime::currentDateTime();
+            ui->textEditRead->moveCursor(QTextCursor::End);
+            strRead = "Send[" + current.toString("HH:mm:ss") + "]:\r\n";
+            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
+        } else {
+            strRead = "Send:\r\n";
+            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
+        }
+        ui->textEditRead->append(tr("<font color='black'>%1</font>").arg(strData));
+    }
+    ui->textEditRead->moveCursor(QTextCursor::End);
 }
 
 void MainWindow::on_pushButtonAbout_clicked()
 {
     QMessageBox::about(this, tr("About Serial Tool"),
             tr("<h3>Serial Tool</h3>"
-               "<p>Version: 1.1.1</p>"
+               "<p>Version: 1.1.2</p>"
                "<p>Copyright © 2026 Veidongray@qq.com</p>"
                "<p>Built with Qt %1</p>")
                        .arg(QT_VERSION_STR));
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_pushButtonClear_clicked()
 {
     ui->textEditRead->clear();
 }
