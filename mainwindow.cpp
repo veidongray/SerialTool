@@ -48,12 +48,11 @@ void MainWindow::on_timerShowOut()
             QDateTime current = QDateTime::currentDateTime();
             ui->textEditRead->moveCursor(QTextCursor::End);
             strRead = "Recv[" + current.toString("HH:mm:ss") + "]:\r\n";
-            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         } else {
             strRead = "Recv:\r\n";
-            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         }
-        ui->textEditRead->append(*rxBuffer);
+        ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
+        ui->textEditRead->append(tr("<font color='block'>%1</font>").arg(QString::fromUtf8(*rxBuffer)));
         rxBuffer->clear();
         ui->textEditRead->moveCursor(QTextCursor::End);
     }
@@ -264,11 +263,10 @@ void MainWindow::on_pushButtonSendData_clicked()
             QDateTime current = QDateTime::currentDateTime();
             ui->textEditRead->moveCursor(QTextCursor::End);
             strRead = "Send[" + current.toString("HH:mm:ss") + "]:\r\n";
-            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         } else {
             strRead = "Send:\r\n";
-            ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         }
+        ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
         ui->textEditRead->append(tr("<font color='black'>%1</font>").arg(strData));
     }
     ui->textEditRead->moveCursor(QTextCursor::End);
