@@ -42,19 +42,22 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_timerShowOut()
 {
+    QDateTime current = QDateTime::currentDateTime();
     if (!rxBuffer->isEmpty()) {
         QString strRead;
-        if (ui->checkBoxTimeView->isChecked()) {
-            QDateTime current = QDateTime::currentDateTime();
-            ui->textEditRead->moveCursor(QTextCursor::End);
-            strRead = "Recv[" + current.toString("HH:mm:ss") + "]:\r\n";
-        } else {
-            strRead = "Recv:\r\n";
+        if (ui->checkBoxTimeView->isChecked() && ui->checkBoxRecvSend->isChecked()) {
+            strRead = "[Recv " + current.toString("HH:mm:ss") + "]:";
+        } else if (ui->checkBoxRecvSend->isChecked()) {
+            strRead = "[Recv]:";
+        } else if (ui->checkBoxTimeView->isChecked()) {
+            strRead = "[" + current.toString("HH:mm:ss") + "]:";
         }
-        ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
-        ui->textEditRead->append(tr("<font color='block'>%1</font>").arg(QString::fromUtf8(*rxBuffer)));
-        rxBuffer->clear();
         ui->textEditRead->moveCursor(QTextCursor::End);
+        ui->textEditRead->insertHtml(tr("<font color='blue'>%1</font><br>").arg(strRead));
+        ui->textEditRead->insertHtml(tr("<font color='black'></font>"));
+        ui->textEditRead->insertPlainText(*rxBuffer);
+        ui->textEditRead->moveCursor(QTextCursor::End);
+        rxBuffer->clear();
     }
 }
 
@@ -254,29 +257,32 @@ void MainWindow::on_pushButtonSendData_clicked()
 {
     QString strRead;
     QString strData = ui->plainTextEditWrite->toPlainText();
+    QDateTime current = QDateTime::currentDateTime();
     if (strData.isEmpty())
         return;
     if (serial->write(strData.toUtf8()) < 0)
         qDebug() << serial->errorString();
     else {
-        if (ui->checkBoxTimeView->isChecked()) {
-            QDateTime current = QDateTime::currentDateTime();
-            ui->textEditRead->moveCursor(QTextCursor::End);
-            strRead = "Send[" + current.toString("HH:mm:ss") + "]:\r\n";
-        } else {
-            strRead = "Send:\r\n";
+        if (ui->checkBoxTimeView->isChecked() && ui->checkBoxRecvSend->isChecked()) {
+            strRead = "[Send " + current.toString("HH:mm:ss") + "]:";
+        } else if (ui->checkBoxRecvSend->isChecked()) {
+            strRead = "[Send]:";
+        } else if (ui->checkBoxTimeView->isChecked()) {
+            strRead = "[" + current.toString("HH:mm:ss") + "]:";
         }
-        ui->textEditRead->append(tr("<font color='blue'>%1</font>").arg(strRead));
-        ui->textEditRead->append(tr("<font color='black'>%1</font>").arg(strData));
+        ui->textEditRead->moveCursor(QTextCursor::End);
+        ui->textEditRead->insertHtml(tr("<font color='blue'>%1</font><br>").arg(strRead));
+        ui->textEditRead->insertHtml(tr("<font color='black'></font>"));
+        ui->textEditRead->insertPlainText(strData);
+        ui->textEditRead->moveCursor(QTextCursor::End);
     }
-    ui->textEditRead->moveCursor(QTextCursor::End);
 }
 
 void MainWindow::on_pushButtonAbout_clicked()
 {
     QMessageBox::about(this, tr("About Serial Tool"),
             tr("<h3>Serial Tool</h3>"
-               "<p>Version: 1.1.3</p>"
+               "<p>Version: 1.1.4</p>"
                "<p>Copyright © 2026 Veidongray@qq.com</p>"
                "<p>Built with Qt %1</p>")
                        .arg(QT_VERSION_STR));
